@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
 
-import find_text
+from find_text import FindText
 
 
 class TestMain(TestCase):
@@ -26,17 +26,17 @@ class TestMain(TestCase):
                 "s",
                 "|",
                 "getting",
-                "the",
+                "tHE",
+                "bOUndING",
                 "screen_image",
                 "",
             ]
         }
-        pass
 
     def test_find_target_text_matches(self):
         expected = [
             (4, 5, 6),
-            (17, 18)
+            (17, 18, 19)
         ]
-        actual = find_text.find_target_indices(self.ocr_result["text"], "Getting the bounding")
+        actual = FindText.find_target_indices(self.ocr_result["text"], "Getting the bounding")
         self.assertEqual(expected, actual)
