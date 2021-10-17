@@ -89,7 +89,7 @@ class FindText:
                     current_match_word_index = 0
                     match_start = 0
             else:
-                if result.lower() == target_split[current_match_word_index].lower():
+                if result.lower().startswith(target_split[current_match_word_index].lower()):
                     if target_text_split_len == 1:
                         indexes.append(tuple([i]))
                         continue
