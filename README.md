@@ -15,6 +15,7 @@ Python packages:
 * Pillow
 * pytesseract
 * numpy
+* pyautogui
 
 Other:
 * Follow the install instructions for `pytesseract` [here](https://pypi.org/project/pytesseract/#installation)

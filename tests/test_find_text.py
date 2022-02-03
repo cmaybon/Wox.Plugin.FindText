@@ -40,3 +40,9 @@ class TestMain(TestCase):
         ]
         actual = FindText.find_target_indices(self.ocr_result["text"], "Getting the bounding")
         self.assertEqual(expected, actual)
+
+    def test_get_click_target_text(self):
+        self.assertEqual("C", FindText.get_click_target_text(2))
+        self.assertEqual("AA", FindText.get_click_target_text(26))
+        self.assertEqual("AZ", FindText.get_click_target_text(51))
+        self.assertEqual("AAT", FindText.get_click_target_text(71))
