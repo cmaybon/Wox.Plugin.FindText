@@ -1,10 +1,13 @@
+import string
 import tkinter
+
 import pytesseract
 import cv2
 import PIL.ImageGrab
 import PIL.Image
 import PIL.ImageTk
 import numpy
+import pyautogui
 
 
 TRANSPARENT_COLOR_TARGET = "#FF00FE"
@@ -21,16 +24,18 @@ class FindText:
         self.root.configure(bg=TRANSPARENT_COLOR_TARGET)
         # Done to be able to have the window be transparent but have opaque elements.
         # Using "-alpha" affects all the window and all children.
-        self.root.wm_attributes("-transparentcolor", "#FF00FE")
+        self.root.wm_attributes("-transparentcolor", TRANSPARENT_COLOR_TARGET)
         self.canvas = tkinter.Canvas(self.root, highlightthickness=0, bg=TRANSPARENT_COLOR_TARGET)
         self.canvas.pack(fill=tkinter.BOTH, expand=True)
 
         self.root.bind("<Key>", lambda x: self.on_any_key_pressed(x))
+        self.root.bind("<Escape>", lambda x: self.on_cancel_key_pressed(x))
         self.root.bind("<FocusIn>", lambda x: self.on_focus_in(x))
         self.root.bind("<FocusOut>", lambda x: self.on_focus_out(x))
 
         self._images_cache = list()
         self._first_focus = True
+        self._click_target_text_to_positions = dict()
 
     def search(self, target_text: str):
         self._images_cache.clear()
@@ -40,11 +45,19 @@ class FindText:
 
         ocr_data = pytesseract.image_to_data(gray_scale, config="--oem 3 --psm 6", output_type=pytesseract.Output.DICT)
         target_indices = FindText.find_target_indices(ocr_data["text"], target_text)
-        for index_group in target_indices:
-            for i in index_group:
-                (x, y, w, h) = (ocr_data["left"][i], ocr_data["top"][i], ocr_data["width"][i], ocr_data["height"][i])
+        for i, index_group in enumerate(target_indices):
+            for j in index_group:
+                (x, y, w, h) = (ocr_data["left"][j], ocr_data["top"][j], ocr_data["width"][j], ocr_data["height"][j])
                 # Padding around rectangles to better fit text
-                self.create_rectangle(x - 4, y - 2, x + w + 4, y + h + 2, outline="#00FF00", width=5)
+                x1 = x - 4
+                y1 = y - 2
+                x2 = x + w + 4
+                y2 = y + h + 2
+                rectangle_center = (x1 + ((x2 - x1) / 2), y1 + ((y2 - y1) / 2))
+                self.create_rectangle(x - 4, y - 2, x2, y2, outline="#00FF00", width=5)
+                click_target_text = self.get_click_target_text(i)
+                self.draw_click_target_text(x2, y2, click_target_text)
+                self._click_target_text_to_positions[click_target_text] = rectangle_center
 
     def create_rectangle(self, x1, y1, x2, y2, **kwargs):
         """
@@ -64,9 +77,21 @@ class FindText:
             image = PIL.ImageTk.PhotoImage(image)
             self._images_cache.append(image)
             self.canvas.create_image(x1, y1, image=image, anchor="nw")
-
-        if "alpha" not in kwargs:
+        else:
             self.canvas.create_rectangle(x1, y1, x2, y2, **kwargs)
+
+    @staticmethod
+    def get_click_target_text(index: int):
+        alphabet = string.ascii_lowercase.upper()
+        alphabet_length = len(alphabet)
+        result = ""
+        while index >= alphabet_length:
+            result += alphabet[0]
+            index -= alphabet_length
+        return result + alphabet[index]
+
+    def draw_click_target_text(self, x, y, text: str):
+        tkinter.Label(self.root, text=text, bg="orange", fg="black").place(x=x, y=y)
 
     @staticmethod
     def find_target_indices(ocr_text: list, target: str):
@@ -100,9 +125,18 @@ class FindText:
     @staticmethod
     def hex_to_rgb(value: str) -> tuple:
         value = value.lstrip("#")
-        return tuple(int(value[i:i+2], 16) for i in (0, 2, 4))
+        return tuple(int(value[i:i + 2], 16) for i in (0, 2, 4))
 
     def on_any_key_pressed(self, event):
+        if event.char not in string.ascii_lowercase:
+            self.close()
+
+        # Todo handle multiple character targets
+        target = self._click_target_text_to_positions.get(event.char.upper())
+        if target is None:
+            self.close()
+            return
+        pyautogui.click(x=target[0], y=target[1])
         self.close()
 
     def on_focus_in(self, event):
@@ -114,3 +148,6 @@ class FindText:
 
     def close(self):
         self.root.destroy()
+
+    def on_cancel_key_pressed(self, event):
+        self.close()

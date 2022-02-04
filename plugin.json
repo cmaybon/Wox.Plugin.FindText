@@ -4,7 +4,7 @@
     "Name":"FindText",
     "Description":"Ctrl+F for your entire screen.",
     "Author":"cmaybon",
-    "Version":"1.0.0",
+    "Version":"1.1.0",
     "Language":"python",
     "IcoPath": "Images\\findtext.png",
     "ExecuteFileName":"main.py"
